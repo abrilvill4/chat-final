@@ -149,7 +149,7 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+await mongoose.connect("mongodb+srv://chatuser:algo_seguro123@proyecto.14l4yqc.mongodb.net/chat?retryWrites=true&w=majority");
     console.log("Conectado a MongoDB");
 
     server.listen(PORT, () => {
