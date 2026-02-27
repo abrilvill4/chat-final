@@ -1,24 +1,144 @@
+require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const path = require("path");
+const mongoose = require("mongoose");
 const { Server } = require("socket.io");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { exec } = require("child_process");
+const os = require("os");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// 1) Servir estáticos
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("Conectado a MongoDB"))
+  .catch(err => console.error(err));
+
+
+app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// 2) Ruta raíz explícita (para evitar Not Found)
+
+
+const MessageSchema = new mongoose.Schema({
+  room: String,
+  user: String,
+  text: String,
+  ts: Number
+});
+
+const Message = mongoose.model("Message", MessageSchema);
+
+const UserSchema = new mongoose.Schema({
+  username: String,
+  password: String
+});
+
+const User = mongoose.model("User", UserSchema);
+
+
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// (opcional) healthcheck para probar que vive
 app.get("/health", (req, res) => res.send("ok"));
 
+app.post("/register", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    await User.create({
+      username,
+      password: hashed
+    });
+
+    res.json({ message: "Usuario creado" });
+
+  } catch (err) {
+    res.status(500).json({ error: "Error al registrar" });
+  }
+});
+
+
+app.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const user = await User.findOne({ username });
+    if (!user) return res.status(400).json({ error: "Usuario no existe" });
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(400).json({ error: "Contraseña incorrecta" });
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "2h" }
+    );
+
+    res.json({ token });
+
+  } catch (err) {
+    res.status(500).json({ error: "Error en login" });
+  }
+});
+
+
+
+// Listar procesos
+app.get("/procesos", (req, res) => {
+  const comando = process.platform === "win32" ? "tasklist" : "ps aux";
+
+  exec(comando, (err, stdout) => {
+    if (err) return res.status(500).send("Error listando procesos");
+    res.send(stdout);
+  });
+});
+
+// Monitor CPU y memoria
+app.get("/monitor", (req, res) => {
+  res.json({
+    cpuLoad: os.loadavg(),
+    memory: {
+      total: os.totalmem(),
+      free: os.freemem()
+    }
+  });
+});
+
+
+
+io.on("connection", (socket) => {
+
+  socket.on("joinRoom", async ({ room, user }) => {
+    socket.join(room);
+
+    const history = await Message.find({ room })
+      .sort({ ts: 1 })
+      .limit(50);
+
+    socket.emit("historial", history);
+  });
+
+  socket.on("mensaje", async (data) => {
+    const message = new Message(data);
+    await message.save();
+
+    io.to(data.room).emit("mensaje", data);
+  });
+
+});
+
+
+
 const PORT = process.env.PORT || 3000;
+
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });

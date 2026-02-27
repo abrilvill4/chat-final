@@ -7,7 +7,12 @@
     "start": "node server.js",
     "dev": "node server.js"
   },
-  "keywords": ["chat", "socket.io", "sistemas-operativos", "procesos"],
+  "keywords": [
+    "chat",
+    "socket.io",
+    "sistemas-operativos",
+    "procesos"
+  ],
   "author": "Equipo SO",
   "license": "ISC",
   "type": "commonjs",
@@ -20,6 +25,16 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.3",
+    "os-utils": "^0.0.14",
     "socket.io": "^4.8.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paulinadsalcedos/sistema-distribuido-chat.git"
+  },
+  "bugs": {
+    "url": "https://github.com/paulinadsalcedos/sistema-distribuido-chat/issues"
+  },
+  "homepage": "https://github.com/paulinadsalcedos/sistema-distribuido-chat#readme"
 }
