@@ -8,7 +8,7 @@ const sendBtn = document.getElementById("sendBtn");
 
 const statusEl = document.getElementById("status");
 const roomTitleEl = document.getElementById("roomTitle");
-
+const socket = io(window.location.origin);
 const myNameEl = document.getElementById("myName");
 const myAvatarEl = document.getElementById("myAvatar");
 const nameInput = document.getElementById("nameInput");
