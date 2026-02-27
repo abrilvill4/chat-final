@@ -19,9 +19,6 @@ const io = new Server(server, {
 });
 
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("Conectado a MongoDB"))
-  .catch(err => console.error("Error MongoDB:", err));
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -148,7 +145,22 @@ io.on("connection", (socket) => {
 
 
 const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
-});
+async function startServer() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("Conectado a MongoDB");
+
+    server.listen(PORT, () => {
+      console.log(`Servidor corriendo en puerto ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error("Error conectando a MongoDB:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
+
