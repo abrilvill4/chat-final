@@ -3,23 +3,29 @@ const express = require("express");
 const http = require("http");
 const path = require("path");
 const mongoose = require("mongoose");
-const { Server } = require("socket.io");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { exec } = require("child_process");
 const os = require("os");
+const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("Conectado a MongoDB"))
-  .catch(err => console.error(err));
-
+  .catch(err => console.error("Error MongoDB:", err));
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+
 
 
 
@@ -64,7 +70,6 @@ app.post("/register", async (req, res) => {
     res.status(500).json({ error: "Error al registrar" });
   }
 });
-
 
 app.post("/login", async (req, res) => {
   try {
@@ -116,6 +121,8 @@ app.get("/monitor", (req, res) => {
 
 io.on("connection", (socket) => {
 
+  console.log("Usuario conectado:", socket.id);
+
   socket.on("joinRoom", async ({ room, user }) => {
     socket.join(room);
 
@@ -133,6 +140,9 @@ io.on("connection", (socket) => {
     io.to(data.room).emit("mensaje", data);
   });
 
+  socket.on("disconnect", () => {
+    console.log("Usuario desconectado:", socket.id);
+  });
 });
 
 
