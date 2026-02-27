@@ -1,4 +1,6 @@
-const socket = io();
+const socket = io(window.location.origin, {
+  transports: ["websocket"]
+});
 
 const messagesEl = document.getElementById("messages");
 const msgInput = document.getElementById("msgInput");
